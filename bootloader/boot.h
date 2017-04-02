@@ -1,7 +1,7 @@
 #ifndef BOOT_H
 #define BOOT_H
 
-struct ELFHeader {
+typedef struct ELFHeader {
 	unsigned int   magic;
 	unsigned char  elf[12];
 	unsigned short type;
@@ -17,10 +17,10 @@ struct ELFHeader {
 	unsigned short shentsize;
 	unsigned short shnum;
 	unsigned short shstrndx;
-};
+}ELFHeader;
 
 /* ELF32 Program header */
-struct ProgramHeader {
+typedef struct ProgramHeader {
 	unsigned int type;
 	unsigned int off;
 	unsigned int vaddr;
@@ -29,7 +29,7 @@ struct ProgramHeader {
 	unsigned int memsz;
 	unsigned int flags;
 	unsigned int align;
-};
+}ProgramHeader;
 
 void waitDisk(void);
 

@@ -1,9 +1,18 @@
 #include "boot.h"
 
 #define SECTSIZE 512
+#define KER_START_ADDR 0x100000
 
 void bootMain(void) {
 	/* 加载内核至内存，并跳转执行 */
+	// Kernel occupies 200 sectors (1 to 200), located at memory address 0x100000
+	int i;
+	for (i = 0; i < 200; i++)
+		readSect((void *)(KER_START_ADDR + SECTSIZE * i), i + 1);
+
+	ELFHeader *elfhdr = (ELFHeader *)KER_START_ADDR;
+	// jump to the entry point of kernel
+	((void(*)())elfhdr->entry) ();
 }
 
 void waitDisk(void) { // waiting for disk
