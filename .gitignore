@@ -31,3 +31,7 @@
 # Debug files
 *.dSYM/
 *.su
+
+# Something specific to this lab
+*.img
+*.bin
