@@ -50,10 +50,10 @@ void initSeg() {
 	asm volatile("ltr %%ax":: "a" (KSEL(SEG_TSS)));
 
 	/* TODO 设置正确的段寄存器*/
-	asm volatile("movw %0, %%ds" : : "r"(KSEL(SEG_KDATA)));
-	asm volatile("movw %0, %%es" : : "r"(KSEL(SEG_KDATA)));
-	asm volatile("movw %0, %%ss" : : "r"(KSEL(SEG_KDATA)));
-	asm volatile("ljmp %0, $farjmp \n\t"
+	asm volatile("movw %w0, %%ds" : : "r"(KSEL(SEG_KDATA)));
+	asm volatile("movw %w0, %%es" : : "r"(KSEL(SEG_KDATA)));
+	asm volatile("movw %w0, %%ss" : : "r"(KSEL(SEG_KDATA)));
+	asm volatile("ljmp %w0, $farjmp \n\t"
 				 "farjmp: " : : "i"(KSEL(SEG_KCODE)));
 
 	lLdt(0);
@@ -67,8 +67,8 @@ void enterUserSpace(uint32_t entry) {
 	 * you should set the right segment registers here
 	 * and use 'iret' to jump to ring3
 	 */
-	asm volatile("movw %0, %%ds" : : "r"(USEL(SEG_UDATA)));
-	asm volatile("movw %0, %%es" : : "r"(USEL(SEG_UDATA)));
+	asm volatile("movw %w0, %%ds" : : "r"(USEL(SEG_UDATA)));
+	asm volatile("movw %w0, %%es" : : "r"(USEL(SEG_UDATA)));
 	
 	/* push %ss */
 	asm volatile("pushl %0" : : "i"(USEL(SEG_UDATA)));
