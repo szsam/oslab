@@ -14,7 +14,7 @@ void bootMain(void) {
 	uint8_t buf[NR_SECT * SECTSIZE];
 
 	int ix;
-	for (ix = 0; ix < 200; ix++)
+	for (ix = 0; ix < NR_SECT; ix++)
 		readSect(buf + ix * SECTSIZE, ix + 1);
 
 	elf = (void*)buf;
