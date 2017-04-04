@@ -30,7 +30,7 @@ void irqHandle(struct TrapFrame *tf) {
 #define VIDEO_MEMORY_ADDR 0xb8000
 
 static void write_video_memory(const char *buf, size_t len) {
-	static int row = 5;
+	static int row = 0;
 	static int col = 0;
 
 	for (size_t i = 0; i < len; i++) {
