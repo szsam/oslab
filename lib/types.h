@@ -10,6 +10,7 @@ typedef          char  int8_t;
 typedef unsigned char  boolean;
 
 typedef uint32_t size_t;
+typedef int32_t ssize_t;
 typedef int32_t  pid_t;
 
 
