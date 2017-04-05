@@ -12,7 +12,9 @@ void irqHandle(struct TrapFrame *tf) {
 	/*
 	 * 中断处理程序
 	 */
-	/* Reassign segment register */
+	/* TODO Reassign segment registers */
+	asm volatile("movw %w0, %%ds" : : "r"(KSEL(SEG_KDATA)));
+	asm volatile("movw %w0, %%es" : : "r"(KSEL(SEG_KDATA)));
 
 	switch(tf->irq) {
 		case -1:
@@ -25,6 +27,10 @@ void irqHandle(struct TrapFrame *tf) {
 			break;
 		default:assert(0);
 	}
+
+	/* TODO Restore segment registers */
+	asm volatile("movw %w0, %%ds" : : "r"(USEL(SEG_UDATA)));
+	asm volatile("movw %w0, %%es" : : "r"(USEL(SEG_UDATA)));
 }
 
 #define VIDEO_MEMORY_ADDR 0xb8000
