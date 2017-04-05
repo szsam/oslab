@@ -46,6 +46,8 @@ void bootMain(void) {
 
 	// jump to the entry point of kernel
 	((void(*)())elf->e_entry) ();
+
+	while (1);	// This allows GCC to do some code optimization
 }
 
 void waitDisk(void) { // waiting for disk
