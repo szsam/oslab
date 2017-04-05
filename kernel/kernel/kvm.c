@@ -7,7 +7,7 @@ SegDesc gdt[NR_SEGMENTS];
 TSS tss;
 
 #define SECTSIZE 512
-#define NR_SECT 13 // Kernel occupies 13 sectors (201 to 213)
+#define NR_SECT 15 // Kernel occupies 13 sectors (201 to 213)
 #define START_SECT 201
 
 void waitDisk(void) {
