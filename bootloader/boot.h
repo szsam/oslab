@@ -1,5 +1,6 @@
 #ifndef BOOT_H
 #define BOOT_H
+#include <stddef.h>
 
 typedef struct ELFHeader {
 	unsigned int   magic;
@@ -50,6 +51,23 @@ static inline int inLong(short port) {
 
 static inline void outByte(short port, char data) {
 	asm volatile("out %0,%1" : : "a" (data), "d" (port));
+}
+
+inline void *memcpy(void *dest, const void *src, size_t n)
+{
+	char *cdest = (char *)dest;
+	const char *csrc = (const char *)src;
+	while (n-- > 0)
+		*cdest++ = *csrc++;
+	return dest;
+}
+
+inline void *memset(void *s, int c, size_t n)
+{
+	char *ps = (char *)s;
+	while (n-- > 0)
+		*ps = (char)c;
+	return s;
 }
 
 #endif

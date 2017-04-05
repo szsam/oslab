@@ -1,6 +1,6 @@
 #include "boot.h"
 #include <elf.h>
-#include <string.h>
+//#include <string.h>
 
 #define SECTSIZE 512
 #define NR_SECT 200 // Kernel occupies 200 sectors (1 to 200)

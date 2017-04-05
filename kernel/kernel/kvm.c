@@ -1,7 +1,8 @@
 #include "x86.h"
 #include "device.h"
 #include <elf.h>
-#include <string.h>
+//#include <string.h>
+#include <stddef.h>
 
 SegDesc gdt[NR_SEGMENTS];
 TSS tss;
@@ -84,6 +85,9 @@ void enterUserSpace(uint32_t entry) {
 	asm volatile("iret");
 }
 
+void *memcpy(void *dest, const void *src, size_t n);
+void *memset(void *s, int c, size_t n);
+
 void loadUMain(void) {
 
 	/*加载用户程序至内存*/
@@ -127,3 +131,21 @@ void loadUMain(void) {
 	enterUserSpace(elf->e_entry);
 
 }
+
+inline void *memcpy(void *dest, const void *src, size_t n)
+{
+	char *cdest = (char *)dest;
+	const char *csrc = (const char *)src;
+	while (n-- > 0)
+		*cdest++ = *csrc++;
+	return dest;
+}
+
+inline void *memset(void *s, int c, size_t n)
+{
+	char *ps = (char *)s;
+	while (n-- > 0)
+		*ps = (char)c;
+	return s;
+}
+
