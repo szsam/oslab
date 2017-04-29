@@ -22,6 +22,9 @@ void irqHandle(struct TrapFrame *tf) {
 		case 0xd:
 			GProtectFaultHandle(tf);
 			break;
+		case 0x20:
+			putChar('t');
+			break;
 		case 0x80:
 			syscallHandle(tf);
 			break;
