@@ -26,6 +26,9 @@
 #define KSEL(desc) (((desc) << 3) | DPL_KERN)
 #define USEL(desc) (((desc) << 3) | DPL_USER)
 
+/* this marco will be defined by gcc if the source file is assembly */
+#ifndef __ASSEMBLER__
+
 struct GateDescriptor {
 	uint32_t offset_15_0      : 16;
 	uint32_t segment          : 16;
@@ -38,8 +41,12 @@ struct GateDescriptor {
 };
 
 struct TrapFrame {
-	uint32_t edi, esi, ebp, xxx, ebx, edx, ecx, eax;
-	int32_t irq;
+	uint32_t edi, esi, ebp, xxx, ebx, edx, ecx, eax;	// GPRs
+	uint32_t gs, fs, es, ds;							// data segment registers
+	int32_t irq;										// #irq
+	uint32_t error_code;								// error code
+	uint32_t eip, cs, eflags;							// execution state saved by hardware
+	uint32_t esp, ss;									// only uses when DPL = 3
 };
 
 /*
@@ -65,6 +72,8 @@ struct SegDesc {
 };
 typedef struct SegDesc SegDesc;
 
+#endif 
+
 #define SEG(type, base, lim, dpl) (SegDesc)                   \
 {	((lim) >> 12) & 0xffff, (uint32_t)(base) & 0xffff,        \
 	((uint32_t)(base) >> 16) & 0xff, type, 1, dpl, 1,         \
@@ -75,6 +84,9 @@ typedef struct SegDesc SegDesc;
 	((uint32_t)(base) >> 16) & 0xff, type, 0, dpl, 1,         \
 	(uint32_t)(lim) >> 16, 0, 0, 1, 0, (uint32_t)(base) >> 24 }
 	
+
+#ifndef __ASSEMBLER__
+
 // Task state segment format
 struct TSS {
 	uint32_t link;         // old ts selector
@@ -105,5 +117,7 @@ static inline void lLdt(uint16_t sel)
 {
 	asm volatile("lldt %0" :: "r"(sel));
 }
+
+#endif
 
 #endif
