@@ -8,7 +8,7 @@ SegDesc gdt[NR_SEGMENTS];
 TSS tss;
 
 #define SECTSIZE 512
-#define NR_SECT 15 // Kernel occupies 13 sectors (201 to 213)
+#define NR_SECT 15 // User's program occupies 13 sectors (201 to 213)
 #define START_SECT 201
 
 void waitDisk(void) {
@@ -61,34 +61,33 @@ void initSeg() {
 	
 }
 
-
-void enterUserSpace(uint32_t entry) {
-	/*
-	 * Before enter user space 
-	 * you should set the right segment registers here
-	 * and use 'iret' to jump to ring3
-	 */
-	asm volatile("movw %w0, %%ds" : : "r"(USEL(SEG_UDATA)));
-	asm volatile("movw %w0, %%es" : : "r"(USEL(SEG_UDATA)));
-	
-	/* push %ss */
-	asm volatile("pushl %0" : : "i"(USEL(SEG_UDATA)));
-	/* push %esp */
-	asm volatile("pushl %0" : : "i"(127 << 20));
-	/* push eflags */
-	asm volatile("pushfl");
-	/* push %cs */
-	asm volatile("pushl %0" : : "i"(USEL(SEG_UCODE)));
-	/* push %eip */
-	asm volatile("pushl %0" : : "r"(entry));
-
-	asm volatile("iret");
-}
+//void enterUserSpace(uint32_t entry) {
+//	/*
+//	 * Before enter user space 
+//	 * you should set the right segment registers here
+//	 * and use 'iret' to jump to ring3
+//	 */
+//	asm volatile("movw %w0, %%ds" : : "r"(USEL(SEG_UDATA)));
+//	asm volatile("movw %w0, %%es" : : "r"(USEL(SEG_UDATA)));
+//	
+//	/* push %ss */
+//	asm volatile("pushl %0" : : "i"(USEL(SEG_UDATA)));
+//	/* push %esp */
+//	asm volatile("pushl %0" : : "i"(127 << 20));
+//	/* push eflags */
+//	asm volatile("pushfl");
+//	/* push %cs */
+//	asm volatile("pushl %0" : : "i"(USEL(SEG_UCODE)));
+//	/* push %eip */
+//	asm volatile("pushl %0" : : "r"(entry));
+//
+//	asm volatile("iret");
+//}
 
 void *memcpy(void *dest, const void *src, size_t n);
 void *memset(void *s, int c, size_t n);
 
-void loadUMain(void) {
+uint32_t loadUMain(void) {
 
 	/*加载用户程序至内存*/
 	Elf32_Ehdr *elf;
@@ -97,7 +96,7 @@ void loadUMain(void) {
 	uint8_t buf[NR_SECT * SECTSIZE];
 
 	int ix;
-	for (ix = 0; ix < SECTSIZE; ix++)
+	for (ix = 0; ix < NR_SECT; ix++)
 		readSect(buf + ix * SECTSIZE, ix + START_SECT);
 
 	elf = (void*)buf;
@@ -127,9 +126,7 @@ void loadUMain(void) {
 		}
 	}
 
-	/* enter user space */
-	enterUserSpace(elf->e_entry);
-
+	return elf->e_entry;
 }
 
 inline void *memcpy(void *dest, const void *src, size_t n)
