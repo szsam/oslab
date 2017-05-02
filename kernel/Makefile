@@ -4,7 +4,7 @@ LD = ld
 CFLAGS = -m32 -march=i386 -static \
 	 -fno-builtin -fno-stack-protector -fno-omit-frame-pointer \
 	 -Wall -Werror -O2 -I./include
-ASFLAGS = -m32
+ASFLAGS = -m32 -I./include
 LDFLAGS = -m elf_i386
 
 KCFILES = $(shell find ./ -name "*.c")

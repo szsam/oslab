@@ -1,5 +1,6 @@
 #include "x86.h"
 #include "device.h"
+#include "process.h"
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -8,14 +9,17 @@ void syscallHandle(struct TrapFrame *tf);
 
 void GProtectFaultHandle(struct TrapFrame *tf);
 
+void schedule();
+
 void irqHandle(struct TrapFrame *tf) {
 	/*
 	 * 中断处理程序
 	 */
 	/* TODO Reassign segment registers */
-	asm volatile("movw %w0, %%ds" : : "r"(KSEL(SEG_KDATA)));
-	asm volatile("movw %w0, %%es" : : "r"(KSEL(SEG_KDATA)));
+//	asm volatile("movw %w0, %%ds" : : "r"(KSEL(SEG_KDATA)));
+//	asm volatile("movw %w0, %%es" : : "r"(KSEL(SEG_KDATA)));
 
+	// handle interrupts and exeptions
 	switch(tf->irq) {
 		case -1:
 			break;
@@ -31,9 +35,19 @@ void irqHandle(struct TrapFrame *tf) {
 		default:assert(0);
 	}
 
-	/* TODO Restore segment registers */
-	asm volatile("movw %w0, %%ds" : : "r"(USEL(SEG_UDATA)));
-	asm volatile("movw %w0, %%es" : : "r"(USEL(SEG_UDATA)));
+//	/* TODO Restore segment registers */
+//	asm volatile("movw %w0, %%ds" : : "r"(USEL(SEG_UDATA)));
+//	asm volatile("movw %w0, %%es" : : "r"(USEL(SEG_UDATA)));
+
+	// save the trap frame pointer for the old process
+	current->tf = tf;
+
+	// choose a runnable process by updating current, that is
+	// current = choose_next_process();
+	schedule();
+
+	// TODO set kernel stack for the new process
+	set_tss_esp0((uint32_t)(current->tf + 1));
 }
 
 #define VIDEO_MEMORY_ADDR 0xb8000

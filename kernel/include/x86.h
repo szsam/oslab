@@ -8,6 +8,7 @@
 #include "x86/timer.h"
 
 void initSeg(void);
-void loadUMain(void);
+uint32_t loadUMain(void);
+void set_tss_esp0(uint32_t esp);
 
 #endif

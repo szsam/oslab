@@ -4,9 +4,13 @@
 int data = 0;
 
 int uEntry(void) {
+    printf("Enter user space\n");
+	while (1) {} 
+
     int ret = fork();
     int i = 8;
 
+	
     if (ret == 0) {
         data = 2;
         while( i != 0) {
