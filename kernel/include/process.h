@@ -8,6 +8,7 @@
 typedef struct PCB {
 		struct TrapFrame *tf;
 		uint8_t kstack[KSTACK_SIZE];
+		enum {RUNNABLE, BLOCKED, DEAD} state;
 } PCB;
 
 extern PCB *current;
