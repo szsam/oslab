@@ -11,6 +11,8 @@ void GProtectFaultHandle(struct TrapFrame *tf);
 
 void schedule();
 
+void minus_sleep_time();
+
 void irqHandle(struct TrapFrame *tf) {
 	/*
 	 * 中断处理程序
@@ -27,7 +29,8 @@ void irqHandle(struct TrapFrame *tf) {
 			GProtectFaultHandle(tf);
 			break;
 		case 0x20:
-			putChar('t');
+			//putChar('t');
+			minus_sleep_time();
 			break;
 		case 0x80:
 			syscallHandle(tf);
@@ -50,50 +53,23 @@ void irqHandle(struct TrapFrame *tf) {
 	set_tss_esp0((uint32_t)(current->tf + 1));
 }
 
-#define VIDEO_MEMORY_ADDR 0xb8000
-
-static void write_video_memory(const char *buf, size_t len) {
-	static int row = 0;
-	static int col = 0;
-
-	for (size_t i = 0; i < len; i++) {
-		if (buf[i] == '\n') { 
-			col = 0; row ++; 
-		}
-		else {
-			int pos = (80*row+col)*2;
-			*(uint16_t *)(VIDEO_MEMORY_ADDR + pos) = (0xc << 8) | buf[i];
-			++col;
-			if (col == 80) { col = 0; row ++; }
-		}
-
-	}
-
-}
-
-static ssize_t sys_write(int fd, const void *buf, size_t len) {
-	if (fd == STDOUT_FILENO || fd == STDERR_FILENO) {
-		write_video_memory(buf, len);
-		return len;
-	}
-	else {
-		return -1;
-	}
-}
-
-void syscallHandle(struct TrapFrame *tf) {
-	/* 实现系统调用*/
-	switch(tf->eax) {
-		case SYS_write:
-			tf->eax = sys_write(tf->ebx, (void *)tf->ecx, tf->edx);
-			break;
-		default:	// Unhandled system call
-			assert(0);
-			break;
-	}
-}
 
 void GProtectFaultHandle(struct TrapFrame *tf){
 	assert(0);
 	return;
+}
+
+
+extern PCB procTbl[2];
+void minus_sleep_time() {
+	if (procTbl[0].state == BLOCKED) {
+		--procTbl[0].sleepTime;
+		if (procTbl[0].sleepTime == 0)
+			procTbl[0].state = RUNNABLE;
+	}
+	if (procTbl[1].state == BLOCKED) {
+		--procTbl[1].sleepTime;
+		if (procTbl[1].sleepTime == 0)
+			procTbl[0].state = RUNNABLE;
+	}
 }
