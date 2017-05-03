@@ -14,7 +14,8 @@ int uEntry(void) {
 		printf("Child Process: Pong %d, %d;\n", data, i);
 		sleep(128);
 	}
-	while (1) {}	
+	exit();
+
 //    if (ret == 0) {
 //        data = 2;
 //        while( i != 0) {
