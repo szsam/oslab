@@ -10,5 +10,6 @@
 void initSeg(void);
 uint32_t loadUMain(void);
 void set_tss_esp0(uint32_t esp);
+void set_gdt_usr_seg_base(uint32_t base);
 
 #endif

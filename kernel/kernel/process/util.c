@@ -19,6 +19,7 @@ void initProc(uint32_t entry) {
 	procTbl[0].tf->ss = USEL(SEG_UDATA);
 	procTbl[0].tf->esp = 0x210000;
 
+	procTbl[0].segBase = 0;
 
 	procTbl[1].state = DEAD;
 }

@@ -49,8 +49,10 @@ void irqHandle(struct TrapFrame *tf) {
 	// current = choose_next_process();
 	schedule();
 
-	// TODO set kernel stack for the new process
+	// set kernel stack for the new process
 	set_tss_esp0((uint32_t)(current->tf + 1));
+	// modify gdt for user's processes
+	if (current != &idle) set_gdt_usr_seg_base(current->segBase);
 }
 
 
@@ -60,7 +62,6 @@ void GProtectFaultHandle(struct TrapFrame *tf){
 }
 
 
-extern PCB procTbl[2];
 void minus_sleep_time() {
 	if (procTbl[0].state == BLOCKED) {
 		--procTbl[0].sleepTime;
@@ -70,6 +71,6 @@ void minus_sleep_time() {
 	if (procTbl[1].state == BLOCKED) {
 		--procTbl[1].sleepTime;
 		if (procTbl[1].sleepTime == 0)
-			procTbl[0].state = RUNNABLE;
+			procTbl[1].state = RUNNABLE;
 	}
 }

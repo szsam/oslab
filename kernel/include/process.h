@@ -10,9 +10,12 @@ typedef struct PCB {
 		uint8_t kstack[KSTACK_SIZE];
 		enum {RUNNABLE, BLOCKED, DEAD} state;
 		int sleepTime;
+		uint32_t segBase;
 } PCB;
 
 extern PCB *current;
+extern PCB procTbl[2];
+extern PCB idle;
 
 void initProc();
 #endif

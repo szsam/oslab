@@ -37,6 +37,16 @@ void set_tss_esp0(uint32_t esp) {
 	tss.esp0 = esp;
 }
 
+void set_gdt_usr_seg_base(uint32_t base) {
+	gdt[SEG_UCODE].base_15_0 = base & 0xffff;
+	gdt[SEG_UCODE].base_23_16 = (base >> 16) & 0xff;
+	gdt[SEG_UCODE].base_31_24 = base >> 24;
+	
+	gdt[SEG_UDATA].base_15_0 = base & 0xffff;
+	gdt[SEG_UDATA].base_23_16 = (base >> 16) & 0xff;
+	gdt[SEG_UDATA].base_31_24 = base >> 24;
+}
+
 //void enterUserSpace(uint32_t entry) {
 //	/*
 //	 * Before enter user space 
