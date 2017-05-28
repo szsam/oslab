@@ -81,5 +81,9 @@ int sys_sem_wait(sem_t *sem)
 
 int sys_sem_destroy(sem_t *sem)
 {
+	sem = (sem_t *)((char *)sem + current->segBase);
+	ListHead *tmp = &sem_pool[*sem].list;
+	list_del(tmp);
+	list_add_before(&free_sem, tmp);
 	return 0;
 }
