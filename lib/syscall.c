@@ -32,3 +32,29 @@ int sleep(uint32_t time) {
 int exit() {
 	return syscall(SYS_exit);
 }
+
+#define SYS_sem_init 50
+#define SYS_sem_post 51
+#define SYS_sem_wait 52
+#define SYS_sem_destroy 53
+
+int sem_init(sem_t *sem, uint32_t value)
+{
+	return syscall(SYS_sem_init, sem, value);
+}
+
+int sem_post(sem_t *sem)
+{
+	return syscall(SYS_sem_post, sem);
+}
+
+int sem_wait(sem_t *sem)
+{
+	return syscall(SYS_sem_wait, sem);
+}
+
+int sem_destroy(sem_t *sem)
+{
+	return syscall(SYS_sem_destroy, sem);
+}
+

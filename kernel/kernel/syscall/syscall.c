@@ -1,6 +1,7 @@
 #include "x86.h"
 #include "device.h"
 #include "process.h"
+#include "semaphore.h"
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -96,6 +97,11 @@ static int do_fork() {
 	return 1;
 }
 
+#define SYS_sem_init 50
+#define SYS_sem_post 51
+#define SYS_sem_wait 52
+#define SYS_sem_destroy 53
+
 void syscallHandle(struct TrapFrame *tf) {
 	/* 实现系统调用*/
 	switch(tf->eax) {
@@ -110,6 +116,18 @@ void syscallHandle(struct TrapFrame *tf) {
 			break;
 		case SYS_fork:
 			tf->eax = do_fork();
+			break;
+		case SYS_sem_init:
+			tf->eax = sys_sem_init((sem_t *)tf->ebx, tf->ecx);
+			break;
+		case SYS_sem_post:
+			tf->eax = sys_sem_post((sem_t *)tf->ebx);
+			break;
+		case SYS_sem_wait:
+			tf->eax = sys_sem_wait((sem_t *)tf->ebx);
+			break;
+		case SYS_sem_destroy:
+			tf->eax = sys_sem_destroy((sem_t *)tf->ebx);
 			break;
 		default:	// Unhandled system call
 			assert(0);

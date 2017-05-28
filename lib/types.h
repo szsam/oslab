@@ -13,6 +13,6 @@ typedef uint32_t size_t;
 typedef int32_t ssize_t;
 typedef int32_t  pid_t;
 
-
+typedef int sem_t;
 
 #endif

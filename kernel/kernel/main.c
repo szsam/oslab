@@ -2,6 +2,7 @@
 #include "x86.h"
 #include "device.h"
 #include "process.h"
+#include "semaphore.h"
 
 void kEntry(void) {
 
@@ -12,6 +13,7 @@ void kEntry(void) {
 	initSeg(); // initialize gdt, tss
 	uint32_t entry = loadUMain(); // load user program
 	initProc(entry);	// initialize processes
+	init_sem_pool();	// initialize semaphore pool
 	enableInterrupt();	// sti
 
 	/* This context now becomes the idle process. */
