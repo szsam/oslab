@@ -63,14 +63,18 @@ void GProtectFaultHandle(struct TrapFrame *tf){
 
 
 void minus_sleep_time() {
-	if (procTbl[0].state == BLOCKED) {
-		--procTbl[0].sleepTime;
-		if (procTbl[0].sleepTime == 0)
-			procTbl[0].state = RUNNABLE;
-	}
-	if (procTbl[1].state == BLOCKED) {
-		--procTbl[1].sleepTime;
-		if (procTbl[1].sleepTime == 0)
-			procTbl[1].state = RUNNABLE;
+	ListHead *temp;
+	ListHead *pos;
+
+	list_for_each_safe(pos, temp, &block)
+	{
+		PCB *pcb = list_entry(pos, PCB, list);
+		--pcb->sleepTime;
+		if (pcb->sleepTime == 0)
+		{
+			pcb->state = RUNNABLE;
+			list_del(pos);
+			list_add_before(&ready, pos);
+		}
 	}
 }

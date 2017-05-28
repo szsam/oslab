@@ -41,47 +41,58 @@ static ssize_t sys_write(int fd, const void *buf, size_t len) {
 static int sys_sleep(uint32_t time) {
 	current->sleepTime = time;
 	current->state = BLOCKED;
+	// remove current from the ready queue
+	list_del(&current->list);
+	// add current to block queue
+	list_add_before(&block, &current->list);
 	return 0;
 }
 
 static int sys_exit() {
 	current->state = DEAD;
+	list_del(&current->list);
+	list_add_before(&free, &current->list);
 	return 0;
 }
 
-extern PCB procTbl[2];
 void *memcpy(void *dest, const void *src, size_t n);
 
 static int do_fork() {
+	putChar('f');
 	// copy address space
 	memcpy((void *)0x300000, (void *)0x200000, 0x100000);
 
-	procTbl[1].state = procTbl[0].state;
+	ListHead *child = free.next;
+	list_del(child);
+	list_add_before(&ready, child);
+	PCB *child_pcb = list_entry(child, PCB, list);
 
-	procTbl[1].tf = (struct TrapFrame *)
-			(procTbl[1].kstack + KSTACK_SIZE - 128);
+	child_pcb->state = current->state;
 
-	procTbl[1].tf->ds = procTbl[0].tf->ds;
-	procTbl[1].tf->es = procTbl[0].tf->es;
-	procTbl[1].tf->fs = procTbl[0].tf->fs;
-	procTbl[1].tf->gs = procTbl[0].tf->gs;
+	child_pcb->tf = (struct TrapFrame *)
+			(child_pcb->kstack + KSTACK_SIZE - 128);
 
-	procTbl[1].tf->cs = procTbl[0].tf->cs;
-	procTbl[1].tf->eip = procTbl[0].tf->eip;
-	procTbl[1].tf->eflags = procTbl[0].tf->eflags;
-	procTbl[1].tf->ss = procTbl[0].tf->ss;
-	procTbl[1].tf->esp = procTbl[0].tf->esp;
+	child_pcb->tf->ds = current->tf->ds;
+	child_pcb->tf->es = current->tf->es;
+	child_pcb->tf->fs = current->tf->fs;
+	child_pcb->tf->gs = current->tf->gs;
 
-	procTbl[1].tf->eax = 0;
-	procTbl[1].tf->ebx = procTbl[0].tf->ebx;
-	procTbl[1].tf->ecx = procTbl[0].tf->ecx;
-	procTbl[1].tf->edx = procTbl[0].tf->edx;
-	procTbl[1].tf->esi = procTbl[0].tf->esi;
-	procTbl[1].tf->edi = procTbl[0].tf->edi;
-	procTbl[1].tf->esp = procTbl[0].tf->esp;
-	procTbl[1].tf->ebp = procTbl[0].tf->ebp;
+	child_pcb->tf->cs = current->tf->cs;
+	child_pcb->tf->eip = current->tf->eip;
+	child_pcb->tf->eflags = current->tf->eflags;
+	child_pcb->tf->ss = current->tf->ss;
+	child_pcb->tf->esp = current->tf->esp;
 
-	procTbl[1].segBase = 0x100000;
+	child_pcb->tf->eax = 0;
+	child_pcb->tf->ebx = current->tf->ebx;
+	child_pcb->tf->ecx = current->tf->ecx;
+	child_pcb->tf->edx = current->tf->edx;
+	child_pcb->tf->esi = current->tf->esi;
+	child_pcb->tf->edi = current->tf->edi;
+	child_pcb->tf->esp = current->tf->esp;
+	child_pcb->tf->ebp = current->tf->ebp;
+
+	child_pcb->segBase = 0x100000;
 	return 1;
 }
 

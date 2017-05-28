@@ -1,34 +1,41 @@
 #include "process.h"
 #include "device.h"
+#include "adt/list.h"
 
 PCB idle, *current = &idle;
-PCB procTbl[2];
+
 
 void
 schedule(void) {
 	/* implement process/thread schedule here */
-	if (procTbl[0].state == RUNNABLE && procTbl[1].state == RUNNABLE) {
-		if (current == procTbl) {
-			current = procTbl + 1;
+	if (!list_empty(&ready))
+	{
+		if (current->state == RUNNABLE)
+		{	// put current at the end of the ready queue
+			list_del(&current->list);
+			list_add_before(&ready, &current->list);
 		}
-		else
-			current = procTbl;
+		current = list_entry(ready.next, PCB, list);
 	}
-	else if (procTbl[0].state == RUNNABLE) {
-		current = procTbl;
-	}
-	else if (procTbl[1].state == RUNNABLE) {
-		current = procTbl + 1;
-	}
-	else {
-		current = &idle;
-	}
-
-	// output schedule info for debugging
-	if (current == procTbl)
-		putChar('0');	
-	else if (current == procTbl + 1)
-		putChar('1');
 	else
+		current = &idle;
+	
+
+	// for debug
+#define NR_PROCESS 4
+extern PCB pcbPool[NR_PROCESS];
+	
+	if (current == pcbPool + 0)
+		putChar('0');
+	else if (current == pcbPool + 1)
+		putChar('1');
+	else if (current == pcbPool + 2)
+		putChar('2');
+	else if (current == pcbPool + 3)
+		putChar('3');
+	else if (current == &idle)
 		putChar('i');
+	else
+		putChar('e');
+
 }
