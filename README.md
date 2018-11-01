@@ -1,3 +1,114 @@
+# Lab3 Process Switching
+
+## 1 Aims
+Implement process context switching mechanism, implement simple task scheduling, and implement FORK, SLEEP, and EXIT system calls.
+
+## 2 Steps
+### 2.1 Process Context Switching
+Looking back at our Lab2, whenever the user program initiates a system call through a trap instruction, the CPU will jump to the interrupt handler according to the IA-32 interrupt processing mechanism, save the system state information to the stack, and then handle the interrupt. Restore the system state based on the previously saved information, and finally return from the interrupt. In fact, as long as we slightly modify the code of the Lab2 interrupt handling, we can support multitasking!
+``` asm
+# ...... # other entry points for different interrupts and exceptions
+irq0: pushl $1000; jmp asm_do_irq
+asm_do_irq:
+  pushal
+  pushl %esp
+  call irq_handle
+  # switch %esp to other program
+  popal
+  addl $4, %esp
+  iret
+```
+
+In asm_do_irq, the code will store the general-purpose registers of program A on the stack of A. The contents of these registers together with the previously saved #irq and the hardware-preserved EFLAGS, CS, EIP form the data of the "trap frame", which records the state of A before the interrupt arrives. Notice that the "trap frame" is on the stack. At this time, asm_do_irq passes A's stack top pointer as a parameter to the C function irq_handle.  After returning, if we don't hurry to restore A's state, but first switch the ESP register to B's stack, then B's state will be restored: Restore B's general-purpose register, pop-up #irq, Restore B's EIP, CS, EFLAGS. After returning from the interrupt, we are already running program B!
+
+Where did program A go? Don't worry, it is only temporarily suspended. Before it is suspended, it has saved the state information on its own stack. If ESP is switched, at some point in the future, to the stack of A, the code will restore the state of A according to the information saved before by A (the "trap frame" of A), and A will wake up and execute.
+
+Each time a context switch is made, the stack location in the TSS is set to the kernel stack of the new process via the set_tss_esp0 function (defined in src/kernel/memory/kvm.c).
+
+The base address of the user data segment and the user code segment is modified by the set_gdt_usr_seg_base function each time the context switch is performed.
+
+### 2.2 Process Model
+We have already learned about the concept of the process in the theory class. A process is a running program. Although this sentence contains only a small amount of information, the concept of the process is of vital importance in operating system: the user program runs on OS as a process. OS inherently serves processes. But the process is not born to exist: there is no concept of the process after the system starts. Thus, it needs to be created by the operating system.
+
+To facilitate the management of processes, the operating system uses a data structure called a Process Control Block (PCB) and maintains a PCB for each process.
+``` C
+#define KSTACK_SIZE 4096
+typedef struct PCB {
+    struct TrapFrame *tf;
+    uint8_t kstack[KSTACK_SIZE];
+    enum {RUNNABLE, BLOCKED, DEAD} state;
+    int sleepTime;
+    uint32_t segBase;
+} PCB;
+```
+Tf is a pointer to the process "trap frame"; kstack is the kernel stack of the process; state is the state of the process, RUNNABLE indicates the ready state, BLOCKED indicates the blocking state, DEAD indicates the termination state; sleepTime records the sleep event of the process; segBase is the base address of the process data segment and code segment.
+
+### 2.3 Create First Process
+To create the first process, we only need to artificially initialize a "trap frame" on the process's stack, and let the PCB's tf pointer point to it, so that in the future switching, the artificial "trap frame" can be used to properly restore the state.
+
+Initializing a correct "trap frame" requires consideration of various issues. Specifically, how to initialize each field in the "trap frame":
+
+* General purpose register
+* irq, error_code - will not be used when restoring the state, so it can be ignored during initialization
+* cs - need to be set to the correct code segment
+* ds, es, fs, gs - need to be set to the correct data segment
+* eflags - Pay particular attention to the IF bit in it, as it will determine if the CPU responds to an external interrupt. If the settings are incorrect and the state is restored, the context switch will not occur again!
+* eip - interrupt return address. should be initialized to the user program's entry address
+* ss, esp - the segment selector and stack top pointer of the user stack
+
+### 2.4 Schedule
+With the PCB, we can schedule between different processes. The kernel maintains a global pointer `current` to indicate the currently running process. The job of scheduling is to select a ready process as the target for context switching.
+
+``` asm
+asm_do_irq:
+  pushal
+  pushl %esp
+  call irq_handle
+  # %esp = current->tf
+  popal
+  addl $4, %esp
+  iret
+```
+-----------------------------------------
+``` C
+void irq_handle(TrapFrame *tf) {
+  // handle interrupts and exeptions
+  // ...
+
+  // save the trap frame pointer for the old process
+  current->tf = tf;
+
+  // choose a runnable process by updating current, that is
+  // current = choose_next_process();
+  schedule();
+}
+```
+We can use the Round Robin strategy, that is, schedule process 1, process 2, ..., process n, process 1...
+
+Finally, we mention the IDLE thread. When there are no other ready threads to schedule, the system should select the IDLE thread for scheduling. The IDLE thread does nothing, waiting for the next interrupt. In oslab, we don't need to manually create the IDLE thread. After the kernel performs a series of initialization, it will enable the interrupt. At this point, the execution flow changes and becomes the IDLE thread, waiting for the interrupt to arrive.
+
+### 2.5 System Calls
+#### 2.5.1 fork()
+The FORK system call is used to create a child process. The kernel needs to allocate a separate memory for the child process, completely copy the address space and user state stack of the parent process into the memory of the child process, allocate independent process control blocks for the child process, and complete the setting of the process control block for the child process.
+
+The PCB of the child process is almost the same as the PCB of the parent process, but the following fields are different:
+
+* The tf of the child process should point to the "trap frame" located in the kernel stack of the child process.
+* The eax in the child process TrapFrame is 0, because the return value of the fork function for the child process is 0.
+* The segment base address of the child process must be different from the segment base address of the parent process
+
+#### 2.5.2 sleep()
+Set the state of the process to blocking state (BLOCKED) and fill the sleepTime field in the PCB. Each time a clock interrupt arrives, all sleepTimes in the blocked state are decremented by one. If a process's sleepTime is reduced to 0, it is placed back into the ready queue so that it can be scheduled again.
+
+#### 2.5.3 exit()
+Set the state of the process to the state of termination (DEAD) so that the scheduler does not schedule the process again.
+
+## References
+[1] http://cslabcms.nju.edu.cn/ics/index.php/os:2012/lab1  
+[2] INTEL 80386 PROGRAMMER'S REFERENCE MANUAL 1986.  
+[3] Using the GNU Compiler Collection. For gcc version 5.4.0.
+
+------------------------------------
 # Lab3 进程切换 实验报告
 
 ## 1 实验进度
